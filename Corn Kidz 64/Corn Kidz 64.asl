@@ -35,7 +35,9 @@ startup {
 
     settings.Add("split_credits", true, "Split on reaching credits");
 
-    settings.Add("split_mirror", false, "Split on completing a mirror challenge");
+    settings.Add("il", false, "IL Split Points");
+    settings.Add("split_fade", false, "Split on ANY fade", "il");
+    settings.Add("split_mirror", false, "Split on leaving a mirror challenge", "il");
     settings.SetToolTip("split_mirror", "Will split regardless of whether the challenge was completed successfully or not. Not recommended for full game runs.");
 
     settings.Add("misc", false, "Misc.");
@@ -50,6 +52,9 @@ init {
         vars.Helper["cpScene"] = mono.MakeString("GameCtrl", "instance", "checkpointScene");
         vars.Helper["fading"] = mono.Make<bool>("GameCtrl", "instance", "bFading");
         vars.Helper["level"] = mono.Make<int>("GameCtrl", "instance", "data", "currentLvl");
+        vars.Helper["goToDoor"] = mono.Make<int>("GameCtrl", "instance", "goToDoor");
+        vars.Helper["checkPointDoor"] = mono.Make<int>("GameCtrl", "instance", "checkPointDoor");
+        vars.Helper["lastDoor"] = mono.Make<int>("GameCtrl", "instance", "lastDoor");
         vars.Helper["switches"] = mono.MakeArray<bool>("GameCtrl", "instance", "data", "switches");
         vars.Helper["items"] = mono.MakeArray<bool>("GameCtrl", "instance", "data", "items");
         vars.Helper["upgrades"] = mono.MakeArray<bool>("GameCtrl", "instance", "data", "upgrades");
@@ -78,12 +83,20 @@ init {
 
 update {
     if(settings["log_debug"]) {
-        if(old.world != current.world) {
+        if(old.world != current.world)
             print("world updated: " + old.world.ToString() + " -> " + current.world.ToString());
-        }
 
         if(old.cpScene != current.cpScene) 
             print("checkpointScene updated: '" + old.cpScene + "' -> '" + current.cpScene + "'");
+
+        if(old.checkPointDoor != current.checkPointDoor) 
+            print("checkPointDoor updated: '" + old.checkPointDoor + "' -> '" + current.checkPointDoor + "'");
+
+        if(old.lastDoor != current.lastDoor) 
+            print("lastDoor updated: '" + old.lastDoor + "' -> '" + current.lastDoor + "'");
+
+        if(old.fading != current.fading)
+            print("fading updated: " + old.fading + " -> " + current.fading);
             
         vars.PrintArrayChanges(old.switches, current.switches, "switches");
         vars.PrintArrayChanges(old.items, current.items, "items");
@@ -135,6 +148,9 @@ update {
         if(settings["split_ugWarp"] && current.upgrades[2])
             vars.queueSplit = true;
     }
+
+    if(settings["split_fade"] && old.fading != current.fading && current.fading == false)
+        vars.queueSplit = true;
 }
 
 isLoading {
@@ -173,6 +189,5 @@ split {
 }
 
 reset {
-    if(settings["reset_fileDelete"] && old.gameTime != 0 && current.gameTime == 0)
-        return true;
+        return old.gameTime != 0 && current.gameTime == 0;
 }
